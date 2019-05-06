@@ -114,6 +114,11 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 	var filePaths []string
 	logrus.Debugf("Downloading Package files for %s / %s", proj.Name, pkgInfo.Repo)
 
+	progressBar := pb.New(len(pkgInfo.Files))
+	progressBar.SetMaxWidth(100)
+	progressBar.Start()
+	defer progressBar.Finish()
+
 	for _, f := range pkgInfo.Files {
 		logrus.Debugf("Downloading %s", f.Filename)
 
@@ -133,6 +138,7 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 
 		if info != nil && info.Size() == int64(fsize) {
 			logrus.Debugf("File already downloaded")
+			progressBar.Increment()
 			continue
 		}
 
@@ -150,6 +156,8 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 		if err != nil {
 			return filePaths, errors.Wrapf(err, "could not download binary at %s", remotePath)
 		}
+
+		progressBar.Increment()
 	}
 
 	return filePaths, nil
