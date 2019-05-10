@@ -1,6 +1,7 @@
 package obsgo
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,10 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	pb "gopkg.in/cheggaaa/pb.v1"
-)
-
-const (
-	pkgFileRE = `\.(rpm|deb)$`
 )
 
 type Project struct {
@@ -30,19 +27,31 @@ type PackageInfo struct {
 	Files []PkgBinary
 }
 
-// Given a <repo,architecture,pkg>, returns all Package binary files published
-// on the OBS project, whose names match the pkgFileRE regular expression.
+// Given a PackageInfo instance, returns all binary Package files published
+// on the OBS project, whose names match the binaryPackageRE regular expression.
 func (proj *Project) PackageBinaries(pkg *PackageInfo) error {
+	debArchitectures := map[string]string{
+		"x86_64":  "amd64",
+		"aarch64": "arm64",
+		"ppc64le": "ppc64el",
+		"s390x":   "s390x",
+	}
+	debArch, ok := debArchitectures[pkg.Arch]
+	if !ok {
+		return errors.Errorf("Cannot find corresponding debian architecture to %s", pkg.Arch)
+	}
+	debExtensionRE := fmt.Sprintf(`_(all|%s)\.deb`, debArch)
+	rpmExtensionRE := fmt.Sprintf(`\.(noarch|%s)\.rpm`, pkg.Arch)
+	binaryPackageRE := fmt.Sprintf(`(%s|%s)$`, rpmExtensionRE, debExtensionRE)
+
 	pkg.Path = path.Join(pkg.Repo, pkg.Arch, pkg.Name)
-
 	logrus.Debugf("Retrieving binaries for %s", pkg.Path)
-
 	allBins, err := proj.listBinaries(pkg.Path)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to get get list of OBS binaries")
 	}
 
-	re := regexp.MustCompile(pkgFileRE)
+	re := regexp.MustCompile(binaryPackageRE)
 
 	for _, b := range allBins {
 		logrus.WithField("file", b).Debug("processing")
