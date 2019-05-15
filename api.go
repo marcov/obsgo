@@ -39,18 +39,20 @@ func (proj *Project) obsRequest(resource string) (io.ReadCloser, error) {
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		err = errors.Wrap(err, "HTTP GET failed")
 		return nil, err
 	}
 	req.SetBasicAuth(proj.User, proj.Password)
 	client := &http.Client{}
 	resp, err := client.Do(req)
-
-	if resp.StatusCode != 200 {
-		return nil, errors.Errorf("HTTP status code: %d", resp.StatusCode)
+	if err != nil {
+		return nil, err
 	}
 
-	logrus.Debugf("Got HTTP resp body: %#v", resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, errors.Errorf("Unexpected HTTP status code: %d", resp.StatusCode)
+	}
+
+	logrus.Debugf("HTTP response body:\n%#v", resp.Body)
 
 	return resp.Body, nil
 }
@@ -73,7 +75,7 @@ func (proj *Project) listDirectories(path string) ([]string, error) {
 		return nil, err
 	}
 
-	var dirs []string
+	dirs := make([]string, 0, len(list.Dirs))
 	for _, d := range list.Dirs {
 		dirs = append(dirs, d.Name)
 	}
@@ -99,11 +101,7 @@ func (proj *Project) listBinaries(path string) ([]PkgBinary, error) {
 		return nil, err
 	}
 
-	for _, b := range bList.Bins {
-		binaries = append(binaries, b)
-	}
-
-	return binaries, nil
+	return bList.Bins, nil
 }
 
 func (proj *Project) downloadBinary(path string, dest io.Writer) error {

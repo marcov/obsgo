@@ -120,7 +120,6 @@ func (proj *Project) FindAllPackages() ([]PackageInfo, error) {
 // Downloads all the files specified in the passed pkgInfo argument, and returns
 // a slice with a list of the locally downloaded files.
 func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]string, error) {
-	var filePaths []string
 	logrus.Debugf("Downloading Package files for %s / %s", proj.Name, pkgInfo.Repo)
 
 	progressBar := pb.New(len(pkgInfo.Files))
@@ -128,6 +127,7 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 	progressBar.Start()
 	defer progressBar.Finish()
 
+	filePaths := make([]string, 0, len(pkgInfo.Files))
 	for _, f := range pkgInfo.Files {
 		logrus.Debugf("Downloading %s", f.Filename)
 
