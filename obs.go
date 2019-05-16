@@ -45,7 +45,9 @@ func (proj *Project) PackageBinaries(pkg *PackageInfo) error {
 	binaryPackageRE := fmt.Sprintf(`(%s|%s)$`, rpmExtensionRE, debExtensionRE)
 
 	pkg.Path = path.Join(pkg.Repo, pkg.Arch, pkg.Name)
-	logrus.Debugf("Retrieving binaries for %s", pkg.Path)
+	logrus.WithFields(logrus.Fields{
+		"path": pkg.Path,
+	}).Debug("Retrieving OBS package binaries")
 	allBins, err := proj.listBinaries(pkg.Path)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to get get list of OBS binaries")
@@ -54,7 +56,9 @@ func (proj *Project) PackageBinaries(pkg *PackageInfo) error {
 	re := regexp.MustCompile(binaryPackageRE)
 
 	for _, b := range allBins {
-		logrus.WithField("file", b).Debug("processing")
+		logrus.WithFields(logrus.Fields{
+			"file": b,
+		}).Debug("OBS processing package file")
 		if re.Match([]byte(b.Filename)) {
 			pkg.Files = append(pkg.Files, b)
 		}
@@ -67,7 +71,9 @@ func (proj *Project) PackageBinaries(pkg *PackageInfo) error {
 func (proj *Project) FindAllPackages() ([]PackageInfo, error) {
 	var pkgList []PackageInfo
 
-	logrus.WithField("project", proj.Name).Debug("Finding all package files")
+	logrus.WithFields(logrus.Fields{
+		"project": proj.Name,
+	}).Debug("Finding all OBS packages and files")
 
 	progressBar := pb.New(0)
 	progressBar.SetMaxWidth(100)
@@ -120,7 +126,10 @@ func (proj *Project) FindAllPackages() ([]PackageInfo, error) {
 // Downloads all the files specified in the passed pkgInfo argument, and returns
 // a slice with a list of the locally downloaded files.
 func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]string, error) {
-	logrus.Debugf("Downloading Package files for %s / %s", proj.Name, pkgInfo.Repo)
+	logrus.WithFields(logrus.Fields{
+		"project": proj.Name,
+		"repo":    pkgInfo.Repo,
+	}).Debug("Downloading OBS package files")
 
 	progressBar := pb.New(len(pkgInfo.Files))
 	progressBar.SetMaxWidth(100)
@@ -129,8 +138,6 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 
 	filePaths := make([]string, 0, len(pkgInfo.Files))
 	for _, f := range pkgInfo.Files {
-		logrus.Debugf("Downloading %s", f.Filename)
-
 		remotePath := path.Join(pkgInfo.Path, f.Filename)
 		localFile := filepath.Join(root, proj.Name, remotePath)
 		filePaths = append(filePaths, localFile)
@@ -146,7 +153,9 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 		}
 
 		if info != nil && info.Size() == int64(fsize) {
-			logrus.Debugf("File already downloaded")
+			logrus.WithFields(logrus.Fields{
+				"filename": f.Filename,
+			}).Debug("OBS file already downloaded")
 			progressBar.Increment()
 			continue
 		}
@@ -160,6 +169,10 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 		if err != nil {
 			return filePaths, errors.Wrapf(err, "could not create local file %s", localFile)
 		}
+
+		logrus.WithFields(logrus.Fields{
+			"filename": f.Filename,
+		}).Debug("Downloading OBS file")
 
 		err = proj.downloadBinary(remotePath, destFile)
 		if err != nil {

@@ -35,7 +35,9 @@ const (
 
 func (proj *Project) obsRequest(resource string) (io.ReadCloser, error) {
 	url := apiBaseURL + path.Join("/build", proj.Name, resource)
-	logrus.WithField("url", url).Debugf("obsRequest")
+	logrus.WithFields(logrus.Fields{
+		"url": url,
+	}).Debug("obsRequest")
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -52,7 +54,7 @@ func (proj *Project) obsRequest(resource string) (io.ReadCloser, error) {
 		return nil, errors.Errorf("Unexpected HTTP status code: %d", resp.StatusCode)
 	}
 
-	logrus.Debugf("HTTP response body:\n%#v", resp.Body)
+	logrus.Debugf("obsRequest got HTTP response body: %+v", resp.Body)
 
 	return resp.Body, nil
 }
