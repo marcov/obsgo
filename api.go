@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Data structure used for XML unmarshaling of the OBS API responses to retrieve
+// the list of binaries inside a package.
 type PkgBinary struct {
 	Filename string `xml:"filename,attr"`
 	Size     string `xml:"size,attr"`

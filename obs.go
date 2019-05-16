@@ -1,3 +1,11 @@
+//Package obsgo implements some of the Open Build Service APIs [1]
+//for interacting with an OBS project from a Go application.
+//
+//At the moment uniquely a limited subset of APIs are implemented, focusing on
+//those needed to retrieve information about packages, and downloading build
+//artifacts.
+//
+// [1]: https://build.opensuse.org/apidocs/index
 package obsgo
 
 import (
@@ -13,17 +21,27 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
+// Project represents an OBS project
 type Project struct {
-	Name     string
-	User     string
+	// Name of the project
+	Name string
+	// Username needed to access the project with APIs
+	User string
+	// Password needed to access the project with APIs
 	Password string
 }
 
+// PackageInfo groups information related to an OBS package.
 type PackageInfo struct {
-	Name  string
-	Path  string
-	Repo  string
-	Arch  string
+	// Name of the package
+	Name string
+	// Path of the package used for APIs queries
+	Path string
+	// Repository of the package
+	Repo string
+	// Architecture of the binary files built for the Package
+	Arch string
+	// The list of binary files built for the package
 	Files []PkgBinary
 }
 
@@ -185,14 +203,20 @@ func (proj *Project) DownloadPackageFiles(pkgInfo PackageInfo, root string) ([]s
 	return filePaths, nil
 }
 
+// Returns a string slice with a list of repositories available in the project
+// proj.
 func (proj *Project) ListRepos() ([]string, error) {
 	return proj.listDirectories("")
 }
 
+// Returns a string slice with a list of target architectures available in the
+// repository repo inside project proj.
 func (proj *Project) ListArchs(repo string) ([]string, error) {
 	return proj.listDirectories(repo)
 }
 
+// Returns a string slice with a list of packages for the given architecture arch,
+// repository repo inside the project proj.
 func (proj *Project) ListPackages(repo, arch string) ([]string, error) {
 	url := path.Join(repo, arch)
 	return proj.listDirectories(url)
