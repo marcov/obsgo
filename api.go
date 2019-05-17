@@ -53,10 +53,10 @@ func (proj *Project) obsRequest(resource string) (io.ReadCloser, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.Errorf("Unexpected HTTP status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("obsRequest unexpected HTTP response status code: %d", resp.StatusCode)
 	}
 
-	logrus.Debugf("obsRequest got HTTP response body: %+v", resp.Body)
+	logrus.Debugf("obsRequest got HTTP response")
 
 	return resp.Body, nil
 }
